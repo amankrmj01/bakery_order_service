@@ -1,0 +1,180 @@
+# Test 1: Service Health Check
+
+### Test 1a: Order Service Health
+# Expectation: Should return service health info with status UP and correct fields
+GET http://localhost:8084/api/health
+
+### Test 1b: Through API Gateway
+# Expectation: Should proxy health info through gateway
+GET http://localhost:8080/api/orders/health
+
+# Test 2: Service Info
+
+### Test 2a: Service Info
+# Expectation: Should return service info (version, build, etc.)
+GET http://localhost:8084/api/info
+
+# Test 3: Create Test Order
+
+### Test 3a: Get available products
+# Expectation: Should return a list of active products (copy a productId for next test)
+GET http://localhost:8083/api/products/active
+
+### Test 3b: Create Order (replace productId with actual value)
+# Expectation: Should create an order and return order details
+POST http://localhost:8084/api/orders
+Content-Type: application/json
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Role: USER
+
+{
+  "userId": "be14f3c9-d0c1-44e0-808c-40d76dea092e",
+  "customerName": "Emma Smith",
+  "customerEmail": "emma@bakery.com",
+  "customerPhone": "+1234567890",
+  "deliveryType": "PICKUP",
+  "specialInstructions": "Please pack carefully",
+  "items": [
+    {
+      "productId": "863cb939-afcc-4d5d-a38d-671d4019bbc2",
+      "quantity": 2,
+      "specialInstructions": "Extra crispy"
+    }
+  ],
+  "paymentMethod": "CASH",
+  "paymentAmount": 49.66,
+  "currencyCode": "USD"
+}
+
+### Test 4: Get Orders
+
+### Test 4a: Get All Orders
+# Expectation: Should return a list of all orders
+GET http://localhost:8084/api/orders
+
+### Test 4b: Get Orders by User
+# Expectation: Should return orders for the specified user
+GET http://localhost:8084/api/orders/user/123e4567-e89b-12d3-a456-426614174000
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Role: USER
+
+### Test 4c: Get Orders by Status
+# Expectation: Should return orders with status PENDING
+GET http://localhost:8084/api/orders/status/PENDING
+
+# Test 5: Order Management
+
+### Test 5a: Get Order by ID (replace ORDER_ID_HERE)
+# Expectation: Should return order details for the given order ID
+GET http://localhost:8084/api/orders/dd1b65a8-9018-49fb-bb4f-2e4c86806358
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Role: USER
+
+### Test 5b: Update Order Status (Admin only)
+# Expectation: Should update order status to CONFIRMED
+PATCH http://localhost:8084/api/orders/822285bf-ca6c-47ed-9ef8-759b60d66884/status
+Content-Type: application/json
+X-User-Role: ADMIN
+
+{
+  "status": "CONFIRMED",
+  "notes": "Order confirmed by admin"
+}
+
+### Test 5c: Cancel Order
+# Expectation: Should cancel the order and return updated status
+POST http://localhost:8084/api/orders/dd1b65a8-9018-49fb-bb4f-2e4c86806358/cancel
+Content-Type: application/json
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Role: USER
+
+{
+  "reason": "Customer requested cancellation"
+}
+
+### Test 6: Payment Operations
+
+### Test 6a: Get Payment by Order ID (replace ORDER_ID_HERE)
+# Expectation: Should return payment info for the order
+GET http://localhost:8084/api/payments/order/822285bf-ca6c-47ed-9ef8-759b60d66884
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Role: USER
+
+### Test 6b: Get Pending Payments (Admin only)
+# Expectation: Should return a list of pending payments
+GET http://localhost:8084/api/payments/pending
+X-User-Role: ADMIN
+
+### Test 6c: Complete Payment (Admin only, replace PAYMENT_ID_HERE)
+# Expectation: Should complete the payment and return updated payment info
+POST http://localhost:8084/api/payments/e7d14bfa-6b83-4d73-bef9-dd37032cb366/complete
+X-User-Role: ADMIN
+
+# Test 7: Through API Gateway
+
+### Test 7a: Create Order through Gateway (replace PRODUCT_ID_HERE)
+# Expectation: Should create an order via gateway and return order details
+POST http://localhost:8080/api/orders
+Content-Type: application/json
+X-User-Id: 123e4567-e89b-12d3-a456-426614174000
+X-User-Role: USER
+
+{
+  "userId": "123e4567-e89b-12d3-a456-426614174000",
+  "customerName": "Jane Smith",
+  "customerEmail": "jane.smith@example.com",
+  "deliveryType": "DELIVERY",
+  "deliveryAddress": "123 Main St, City, State 12345",
+  "items": [
+    {
+      "productId": "863cb939-afcc-4d5d-a38d-671d4019bbc2",
+      "quantity": 1
+    }
+  ],
+  "payment": {
+    "paymentMethod": "CARD",
+    "amount": 29.83,
+    "cardLastFour": "1234",
+    "cardType": "VISA"
+  }
+}
+
+### Test 7b: Get Orders through Gateway
+# Expectation: Should return orders via gateway (admin access)
+GET http://localhost:8080/api/orders
+X-User-Role: ADMIN
+
+# Test 8: Statistics & Analytics
+
+### Test 8a: Order Statistics (Admin only)
+# Expectation: Should return order statistics for the given date range
+GET http://localhost:8084/api/orders/statistics?startDate=2025-09-01T00:00:00&endDate=2025-09-30T23:59:59
+X-User-Role: ADMIN
+
+### Test 8b: Payment Statistics (Admin only)
+# Expectation: Should return payment statistics for the given date range
+GET http://localhost:8084/api/payments/statistics?startDate=2025-09-01T00:00:00&endDate=2025-09-30T23:59:59
+X-User-Role: ADMIN
+
+# Test 9: Error Handling
+
+### Test 9a: Invalid Order Data
+# Expectation: Should return 400 Bad Request with validation errors
+POST http://localhost:8084/api/orders
+Content-Type: application/json
+
+{
+  "customerName": "",
+  "customerEmail": "invalid-email",
+  "items": []
+}
+
+### Test 9b: Access Control (should return 403)
+# Expectation: Should return 403 Forbidden for unauthorized user
+GET http://localhost:8084/api/orders/user/123e4567-e89b-12d3-a456-426614174000
+X-User-Id: different-user-id
+X-User-Role: USER
+
+### Test 9c: Non-existent Order
+# Expectation: Should return 404 Not Found for non-existent order
+GET http://localhost:8084/api/orders/00000000-0000-0000-0000-000000000000
